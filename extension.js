@@ -1,57 +1,53 @@
-const Lang = imports.lang;
 const Main = imports.ui.main;
 const PopupMenu = imports.ui.popupMenu;
 
-const AudioInputSubMenu = new Lang.Class({
-	Name: 'AudioInputSubMenu',
-	Extends: PopupMenu.PopupSubMenuMenuItem,
-
-	_init: function() {
-		this.parent('Audio Input: Connecting...', true);
+const AudioInputSubMenu = class AudioInputSubMenu extends PopupMenu.PopupSubMenuMenuItem {
+	constructor() {
+		super('Audio Input: Connecting...', true);
 
 		this._control = Main.panel.statusArea.aggregateMenu._volume._control;
 
-		this._controlSignal = this._control.connect('default-source-changed', Lang.bind(this, function() {
+		this._controlSignal = this._control.connect('default-source-changed', () => {
 			this._updateDefaultSource();
-		}));
+		});
 
 		this._updateDefaultSource();
 
-		this.menu.connect('open-state-changed', Lang.bind(this, function(menu, isOpen) {
+		this.menu.connect('open-state-changed', (menu, isOpen) => {
 			if (isOpen)
 				this._updateSourceList();
-		}));
+		});
 
 		//Unless there is at least one item here, no 'open' will be emitted...
-		item = new PopupMenu.PopupMenuItem('Connecting...');
+		let item = new PopupMenu.PopupMenuItem('Connecting...');
 		this.menu.addMenuItem(item);
-	},
+	}
 
-	_updateDefaultSource: function () {
-		defsource = this._control.get_default_source();
+	_updateDefaultSource () {
+		let defsource = this._control.get_default_source();
 		//Unfortunately, Gvc neglects some pulse-devices, such as all "Monitor of ..."
 		if (defsource == null)
 			this.label.set_text("Other");
 		else
 			this.label.set_text(defsource.get_description());
-	},
+	}
 
-	_updateSourceList: function () {
+	_updateSourceList() {
 		this.menu.removeAll();
 
 		let defsource = this._control.get_default_source();
 		let sourcelist = this._control.get_sources();
 		let control = this._control;
 
-		for (i = 0; i < sourcelist.length; i++) {
+		for (let i = 0; i < sourcelist.length; i++) {
 			let source = sourcelist[i];
 			if (source === defsource) {
 				continue;
 			}
 			let item = new PopupMenu.PopupMenuItem(source.get_description());
-			item.connect('activate', Lang.bind(source, function() {
-				control.set_default_source(this);
-			}));
+			item.connect('activate', () => {
+				control.set_default_source(source);
+			});
 			this.menu.addMenuItem(item);
 		}
 		if (sourcelist.length == 0 ||
@@ -59,13 +55,13 @@ const AudioInputSubMenu = new Lang.Class({
 			item = new PopupMenu.PopupMenuItem("No more Devices");
 			this.menu.addMenuItem(item);
 		}
-	},
+	}
 
-	destroy: function() {
+	destroy() {
 		this._control.disconnect(this._controlSignal);
 		this.parent();
 	}
-});
+}
 
 let audioInputSubMenu = null;
 let savedUpdateVisibility = null;
